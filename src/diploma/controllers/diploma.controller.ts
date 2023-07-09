@@ -56,7 +56,7 @@ export class DiplomaController {
     const diplomas = await getRepository(Diploma)
       .createQueryBuilder("diploma")
       .leftJoinAndSelect("diploma.controls", "control")
-      .where("`rank` = :rank", { rank: req.body.rank })
+      .where("`rank` = :rank", { rank: req.query.rank })
       .andWhere("studentId = :userId", { userId: res.locals.jwt.payload.userId })
       .getMany();
 
