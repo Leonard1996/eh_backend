@@ -12,5 +12,6 @@ export class DiplomaRouter {
       DiplomaController.create,
     ]);
     app.get("/diplomas", [AuthenticationMiddleware.checkAzureToken, DiplomaController.get]);
+    app.get("/diplomas-for-teachers", [AuthenticationMiddleware.checkAzureToken, DiplomaController.getForTeachers]);
   };
 }

@@ -61,7 +61,7 @@ export class DiplomaController {
       .getMany();
 
     res.send({
-      teachers,
+      teachers: teachers.map((t) => ({ ...t, teacherId: t.id })),
       diplomas: diplomas.map((d) => ({ ...d, diplomaId: d.id })),
     });
   };
@@ -75,5 +75,19 @@ export class DiplomaController {
     control.to = diplomaPayload.to;
 
     return control;
+  };
+
+  public static getForTeachers = async (req: Request, res: Response) => {
+    const limit = 3;
+    const students = await getRepository(User)
+      .createQueryBuilder("students")
+      .leftJoin("diplomas", "diplomas", "diplomas.studentId = students.id")
+      .where("diplomas.teacherId = :id", { id: res.locals.jwt.payload.userId })
+      .orderBy("students.id", "DESC")
+      .limit(limit)
+      .offset((+req.query.page - 1) * limit)
+      .getMany();
+
+    res.status(200).json({ students });
   };
 }
