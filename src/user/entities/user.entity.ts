@@ -32,6 +32,12 @@ export class User extends Common {
   public uniqueName: string;
 
   @Column("varchar", {
+    nullable: true,
+    length: 256,
+  })
+  public uniqueNumber: string;
+
+  @Column("varchar", {
     nullable: false,
     length: 256,
     name: "role",

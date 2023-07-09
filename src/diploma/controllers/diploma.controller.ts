@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { Not, getRepository } from "typeorm";
 import { Diploma } from "../entities/diploma.entity";
 import { CONTROL_STATUS, Control } from "../../control/entities/control.entity";
 import { Roles, User } from "../../user/entities/user.entity";
@@ -8,7 +8,21 @@ export class DiplomaController {
   public static create = async (req: Request, res: Response) => {
     const diplomaRepository = getRepository(Diploma);
     const controlRepository = getRepository(Control);
+    const userRepository = getRepository(User);
     const diplomaPayload = req.body;
+    const conflictingUser = userRepository.findOne({
+      where: {
+        uniqueNumber: diplomaPayload.uniqueNumber,
+        id: Not(res.locals.jwt.payload.userId),
+      },
+    });
+
+    if (conflictingUser) {
+      return res.sendStatus(409).json({
+        message: "Ky numer matrikulimi i perket nje studenti ekzistues",
+      });
+    }
+
     let control;
 
     if (!diplomaPayload.diplomaId) {
@@ -32,6 +46,8 @@ export class DiplomaController {
     control.document = req.file.filename;
     await controlRepository.save(control);
 
+    const user = await userRepository.findOne({ where: { id: res.locals.jwt.payload.userId } });
+    await userRepository.save(userRepository.merge(user, { uniqueNumber: diplomaPayload.uniqueNumber }));
     return res.send(control);
   };
 
