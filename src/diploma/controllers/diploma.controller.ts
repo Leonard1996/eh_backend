@@ -90,7 +90,7 @@ export class DiplomaController {
   };
 
   public static getForTeachers = async (req: Request, res: Response) => {
-    const limit = 3;
+    const limit = 100;
     const students = await getRepository(User)
       .createQueryBuilder("students")
       .leftJoin("diplomas", "diplomas", "diplomas.studentId = students.id")
