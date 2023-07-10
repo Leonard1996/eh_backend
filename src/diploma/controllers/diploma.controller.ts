@@ -10,12 +10,14 @@ export class DiplomaController {
     const controlRepository = getRepository(Control);
     const userRepository = getRepository(User);
     const diplomaPayload = req.body;
-    const conflictingUser = userRepository.findOne({
+    const conflictingUser = await userRepository.findOne({
       where: {
         uniqueNumber: diplomaPayload.uniqueNumber,
         id: Not(res.locals.jwt.payload.userId),
       },
     });
+
+    console.log(conflictingUser);
 
     if (conflictingUser) {
       return res.sendStatus(409).json({
