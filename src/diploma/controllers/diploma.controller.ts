@@ -54,12 +54,12 @@ export class DiplomaController {
   public static get = async (req: Request, res: Response) => {
     const teachers = await getRepository(User).find({ where: { role: Roles.TEACHER } });
     const diploma = await getRepository(Diploma).findOne({ where: { studentId: res.locals.jwt.payload.userId } });
-    const student = await getRepository(User).find({ where: { id: res.locals.jwt.payload.userId } });
+    const student = await getRepository(User).findOne({ where: { id: res.locals.jwt.payload.userId } });
     if (!diploma) {
       res.send({
         teachers: teachers.map((t) => ({ ...t, teacherId: t.id })),
         diploma: {},
-        control: {},
+        control: { student },
         student,
       });
     }
@@ -75,8 +75,7 @@ export class DiplomaController {
     res.send({
       teachers: teachers.map((t) => ({ ...t, teacherId: t.id })),
       diploma: { ...diploma, diplomaId: diploma.id },
-      control: { ...(control ?? {}), teacher: myTeacher },
-      student,
+      control: { ...(control ?? {}), teacher: myTeacher, student },
     });
   };
 
