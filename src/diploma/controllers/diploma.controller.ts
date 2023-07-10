@@ -61,7 +61,7 @@ export class DiplomaController {
         control: {},
       });
     }
-    const control = await getRepository(Diploma).findOne({
+    const control = await getRepository(Control).findOne({
       where: {
         diplomaId: diploma.id,
         rank: req.query.rank,
