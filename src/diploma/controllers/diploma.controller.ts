@@ -34,7 +34,6 @@ export class DiplomaController {
       // create control
       control.diplomaId = diploma.id;
     }
-
     if (diplomaPayload.diplomaId && diplomaPayload.rank) {
       control = await controlRepository.findOne({
         where: { diplomaId: diplomaPayload.diplomaId, rank: diplomaPayload.rank, status: CONTROL_STATUS.REFUSED },
@@ -55,7 +54,7 @@ export class DiplomaController {
     const diploma = await getRepository(Diploma).findOne({ where: { studentId: res.locals.jwt.payload.userId } });
     const student = await getRepository(User).findOne({ where: { id: res.locals.jwt.payload.userId } });
     if (!diploma) {
-      res.send({
+      return res.send({
         teachers: teachers.map((t) => ({ ...t, teacherId: t.id })),
         diploma: {},
         control: { student },
@@ -93,6 +92,7 @@ export class DiplomaController {
     const limit = 100;
     const students = await getRepository(User)
       .createQueryBuilder("students")
+      .select("students.*, diplomas.*, controls.*")
       .leftJoin("diplomas", "diplomas", "diplomas.studentId = students.id")
       .leftJoin("controls", "controls", "controls.diplomaId = diplpma.id")
       .where("diplomas.teacherId = :id", { id: res.locals.jwt.payload.userId })
