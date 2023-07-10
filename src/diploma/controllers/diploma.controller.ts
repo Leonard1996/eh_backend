@@ -17,8 +17,6 @@ export class DiplomaController {
       },
     });
 
-    console.log(conflictingUser);
-
     if (conflictingUser) {
       return res.sendStatus(409).json({
         message: "Ky numer matrikulimi i perket nje studenti ekzistues",
