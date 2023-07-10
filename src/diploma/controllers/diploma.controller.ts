@@ -43,8 +43,8 @@ export class DiplomaController {
     }
 
     DiplomaController.upsertControl(control, diplomaPayload);
-    control.document = req.file.filename;
-    await controlRepository.save(control);
+    control.document = req["document"].filename;
+    control = await controlRepository.save(control);
 
     const user = await userRepository.findOne({ where: { id: res.locals.jwt.payload.userId } });
     await userRepository.save(userRepository.merge(user, { uniqueNumber: diplomaPayload.uniqueNumber }));
@@ -53,16 +53,27 @@ export class DiplomaController {
 
   public static get = async (req: Request, res: Response) => {
     const teachers = await getRepository(User).find({ where: { role: Roles.TEACHER } });
-    const diplomas = await getRepository(Diploma)
-      .createQueryBuilder("diploma")
-      .leftJoinAndSelect("diploma.controls", "control")
-      .where("`rank` = :rank", { rank: req.query.rank })
-      .andWhere("studentId = :userId", { userId: res.locals.jwt.payload.userId })
-      .getMany();
+    const diploma = await getRepository(Diploma).findOne({ where: { studentId: res.locals.jwt.payload.userId } });
+    if (!diploma) {
+      res.send({
+        teachers: teachers.map((t) => ({ ...t, teacherId: t.id })),
+        diploma: {},
+        control: {},
+      });
+    }
+    const control = await getRepository(Diploma).findOne({
+      where: {
+        diplomaId: diploma.id,
+        rank: req.query.rank,
+      },
+    });
+
+    const myTeacher = teachers.find((t) => t.id === diploma.teacherId);
 
     res.send({
       teachers: teachers.map((t) => ({ ...t, teacherId: t.id })),
-      diplomas: diplomas.map((d) => ({ ...d, diplomaId: d.id })),
+      diploma: { ...diploma, diplomaId: diploma.id },
+      control: { ...(control ?? {}), teacher: myTeacher },
     });
   };
 

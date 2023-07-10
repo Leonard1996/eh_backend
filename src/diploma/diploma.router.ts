@@ -7,7 +7,7 @@ export class DiplomaRouter {
   static configRoutes = (app: express.Application) => {
     app.post("/diplomas", [
       AuthenticationMiddleware.checkAzureToken,
-      UploadMiddleware.validateFileUpload("file", ["pdf"], 1),
+      UploadMiddleware.validateFileUpload("document", ["pdf"], 1),
 
       DiplomaController.create,
     ]);
