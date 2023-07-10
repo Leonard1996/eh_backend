@@ -23,7 +23,7 @@ export class DiplomaController {
       });
     }
 
-    let control;
+    let control = new Control();
 
     if (!diplomaPayload.diplomaId) {
       //create diploma
@@ -32,11 +32,10 @@ export class DiplomaController {
       diploma.studentId = res.locals.jwt.payload.userId;
       diploma = await diplomaRepository.save(diploma);
       // create control
-      control = new Control();
       control.diplomaId = diploma.id;
     }
 
-    if (diplomaPayload.diplomaId) {
+    if (diplomaPayload.diplomaId && diplomaPayload.rank) {
       control = await controlRepository.findOne({
         where: { diplomaId: diplomaPayload.diplomaId, rank: diplomaPayload.rank, status: CONTROL_STATUS.REFUSED },
       });
