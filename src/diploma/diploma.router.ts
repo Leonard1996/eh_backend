@@ -13,5 +13,8 @@ export class DiplomaRouter {
     ]);
     app.get("/diplomas", [AuthenticationMiddleware.checkAzureToken, DiplomaController.get]);
     app.get("/diplomas-for-teachers", [AuthenticationMiddleware.checkAzureToken, DiplomaController.getForTeachers]);
+    app.patch("/diplomas/controls", [AuthenticationMiddleware.checkAzureToken, DiplomaController.updateControl]);
+    app.post("/search-diplomas", [AuthenticationMiddleware.checkAzureToken, DiplomaController.search]);
+    app.get("/teachers", [AuthenticationMiddleware.checkAzureToken, DiplomaController.getTeachers]);
   };
 }

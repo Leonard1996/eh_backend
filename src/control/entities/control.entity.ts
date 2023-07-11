@@ -39,6 +39,16 @@ export class Control extends Common {
   })
   public document: string;
 
+  @Column("text", {
+    nullable: false,
+  })
+  public originalDocument: string;
+
+  @Column("varchar", {
+    nullable: false,
+  })
+  public studyProgram: string;
+
   @Column()
   public from: number;
 

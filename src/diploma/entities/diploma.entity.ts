@@ -3,6 +3,10 @@ import { Common } from "../../common/entities/common";
 import { User } from "../../user/entities/user.entity";
 import { Control } from "../../control/entities/control.entity";
 
+const DIPLOMA_TYPES = {
+  BACHELOR: "Bachelor",
+  MASTER: "Master",
+};
 @Entity("diplomas")
 export class Diploma extends Common {
   @Column("number")
@@ -10,6 +14,9 @@ export class Diploma extends Common {
 
   @Column("number")
   public teacherId: number;
+
+  @Column("varchar")
+  public type: string;
 
   @ManyToOne(() => User, (user) => user.diplomasAsStudent)
   student: User;

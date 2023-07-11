@@ -10,6 +10,7 @@ export class DiplomaController {
     const controlRepository = getRepository(Control);
     const userRepository = getRepository(User);
     const diplomaPayload = req.body;
+
     const conflictingUser = await userRepository.findOne({
       where: {
         uniqueNumber: diplomaPayload.uniqueNumber,
@@ -30,6 +31,7 @@ export class DiplomaController {
       let diploma = new Diploma();
       diploma.teacherId = diplomaPayload.teacherId;
       diploma.studentId = res.locals.jwt.payload.userId;
+      diploma.type = diplomaPayload.type;
       diploma = await diplomaRepository.save(diploma);
       // create control
       control.diplomaId = diploma.id;
@@ -41,7 +43,9 @@ export class DiplomaController {
     }
 
     DiplomaController.upsertControl(control, diplomaPayload);
-    control.document = req["document"].filename;
+    control.document = req.file.filename;
+    control.originalDocument = req.file.originalname;
+    control.sentDate = new Date();
     control = await controlRepository.save(control);
 
     const user = await userRepository.findOne({ where: { id: res.locals.jwt.payload.userId } });
@@ -51,7 +55,9 @@ export class DiplomaController {
 
   public static get = async (req: Request, res: Response) => {
     const teachers = await getRepository(User).find({ where: { role: Roles.TEACHER } });
-    const diploma = await getRepository(Diploma).findOne({ where: { studentId: res.locals.jwt.payload.userId } });
+    const diploma = await getRepository(Diploma).findOne({
+      where: { studentId: res.locals.jwt.payload.userId, type: req.query.type },
+    });
     const student = await getRepository(User).findOne({ where: { id: res.locals.jwt.payload.userId } });
     if (!diploma) {
       return res.send({
@@ -84,6 +90,7 @@ export class DiplomaController {
     control.title = diplomaPayload.title;
     control.from = diplomaPayload.from;
     control.to = diplomaPayload.to;
+    control.studyProgram = diplomaPayload.studyProgram;
 
     return control;
   };
@@ -92,16 +99,42 @@ export class DiplomaController {
     const limit = 100;
     const students = await getRepository(User)
       .createQueryBuilder("students")
-      .select("students.*, diplomas.*, controls.*")
+      .select("students.name, controls.*, users.name as teacherName")
       .leftJoin("diplomas", "diplomas", "diplomas.studentId = students.id")
-      .leftJoin("controls", "controls", "controls.diplomaId = diplpma.id")
+      .innerJoin("controls", "controls", "controls.diplomaId = diplomas.id")
+      .innerJoin("users", "users", "users.id = diplomas.teacherId")
       .where("diplomas.teacherId = :id", { id: res.locals.jwt.payload.userId })
       .andWhere("controls.rank = :rank", { rank: req.query.rank })
       .orderBy("students.id", "DESC")
-      .limit(limit)
-      .offset((+req.query.page - 1) * limit)
-      .getMany();
+      // .limit(limit)
+      // .offset((+req.query.page - 1) * limit)
+      .getRawMany();
 
     res.status(200).json({ students });
+  };
+
+  public static updateControl = async (req: Request, res: Response) => {
+    let control = await getRepository(Control).findOneOrFail({ where: { id: req.body.id } });
+    await getRepository(Control).update(req.body.id, { status: req.body.status });
+    control.status = req.body.status;
+    res.status(200).json({ control });
+  };
+
+  public static search = async (req: Request, res: Response) => {
+    return getRepository(Diploma)
+      .createQueryBuilder("diplomas")
+      .leftJoinAndSelect("diplomas.controls", "controls")
+      .where(req.body.title ? `controls.title LIKE '%${req.body.title}%'` : "true")
+      .andWhere(req.body.from ? `controls.from <= ${req.body.from}` : "true")
+      .andWhere(req.body.to ? `controls.to >= ${req.body.to}` : "true")
+      .andWhere(req.body.teacherId ? `diplomas.teacherId = ${req.body.teacherId}` : "true")
+      .andWhere(req.body.rank ? `controls.rank = ${req.body.rank}` : "true")
+      .andWhere(req.body.studyProgram ? `controls.studyProgram = ${req.body.studyProgram}` : "true")
+      .andWhere(req.body.type ? `diplomas.type= ${req.body.type}` : "true")
+      .getMany();
+  };
+
+  public static getTeachers = async (req: Request, res: Response) => {
+    return getRepository(User).find({ where: { role: Roles.TEACHER } });
   };
 }
