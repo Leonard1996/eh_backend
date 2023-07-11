@@ -119,7 +119,7 @@ export class DiplomaController {
   };
 
   public static getForTeachers = async (req: Request, res: Response) => {
-    const limit = 100;
+    // const limit = 100;
     const students = await getRepository(User)
       .createQueryBuilder("students")
       .select("students.name, students.uniqueNumber, controls.*, users.name as teacherName, diplomas.type  ")
