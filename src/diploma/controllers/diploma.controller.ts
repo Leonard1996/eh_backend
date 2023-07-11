@@ -99,7 +99,7 @@ export class DiplomaController {
     const limit = 100;
     const students = await getRepository(User)
       .createQueryBuilder("students")
-      .select("students.name, controls.*, users.name as teacherName")
+      .select("students.name, students.uniqueNumber, controls.*, users.name as teacherName, diplomas.type  ")
       .leftJoin("diplomas", "diplomas", "diplomas.studentId = students.id")
       .innerJoin("controls", "controls", "controls.diplomaId = diplomas.id")
       .innerJoin("users", "users", "users.id = diplomas.teacherId")
