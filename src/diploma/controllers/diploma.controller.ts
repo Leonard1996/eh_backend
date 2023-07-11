@@ -3,6 +3,9 @@ import { Not, getRepository } from "typeorm";
 import { Diploma } from "../entities/diploma.entity";
 import { CONTROL_STATUS, Control } from "../../control/entities/control.entity";
 import { Roles, User } from "../../user/entities/user.entity";
+import axios from "axios";
+import { Notification } from "../../notification/entity/notification.entity";
+const fs = require("fs");
 
 export class DiplomaController {
   public static create = async (req: Request, res: Response) => {
@@ -50,6 +53,26 @@ export class DiplomaController {
 
     const user = await userRepository.findOne({ where: { id: res.locals.jwt.payload.userId } });
     await userRepository.save(userRepository.merge(user, { uniqueNumber: diplomaPayload.uniqueNumber }));
+
+    const notification = new Notification();
+    notification.meta = JSON.stringify({ diplomaPayload, control });
+    notification.userId = diplomaPayload.teacherId;
+    await getRepository(Notification).save(notification);
+    const notificationsNumber = await getRepository(Notification).count({
+      where: { userId: diplomaPayload.teacherId, isRead: false },
+    });
+    try {
+      await axios.post(process.env.WEB_SOCKET_URL + "/control-submitted", {
+        control,
+        diplomaPayload,
+        notificationsNumber,
+      });
+    } catch (err) {
+      fs.writeFile("test", JSON.stringify(err), (err) => {
+        console.log(err);
+      });
+    }
+
     return res.send(control);
   };
 
@@ -117,6 +140,27 @@ export class DiplomaController {
     let control = await getRepository(Control).findOneOrFail({ where: { id: req.body.id } });
     await getRepository(Control).update(req.body.id, { status: req.body.status });
     control.status = req.body.status;
+
+    const controlDetails = await getRepository(Control)
+      .createQueryBuilder("controls")
+      .select("controls.*, diplomas.type, users.name, users.id as studentId")
+      .innerJoin("diplomas", "diplomas", "diplomas.id = controls.diplomaId")
+      .innerJoin("users", "users", "users.id = diplomas.studentId")
+      .where("controls.id = :id", { id: req.body.id })
+      .getRawOne();
+
+    const notification = new Notification();
+    notification.meta = JSON.stringify(controlDetails);
+    notification.userId = controlDetails.studentId;
+    await getRepository(Notification).save(notification);
+    const notificationsNumber = await getRepository(Notification).count({
+      where: { userId: controlDetails.studentId, isRead: false },
+    });
+    axios.post(process.env.WEB_SOCKET_URL + "/control-status-updated", {
+      controlDetails,
+      notificationsNumber,
+    });
+
     res.status(200).json({ control });
   };
 
